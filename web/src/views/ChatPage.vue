@@ -53,42 +53,50 @@
           placeholder="Search Players..."
           class="custom-input"
       />
-
       <select v-model="selectedRegion" class="custom-select">
         <option value="">All Regions</option>
         <option v-for="region in regions" :key="region" :value="region">
           {{ region }}
         </option>
       </select>
-      <div v-for="(player, index) in filteredPlayers" :key="index" :class="['player-card']">
-        <div class="player-info">
-          <div class="player-avatar" :style="{ backgroundColor: player.bgColor }">
-            {{ player.avatarInitials }}
-          </div>
-          <div>
-            <h3 class="player-name">{{ player.handle }} </h3>
-            <p class="player-score">{{ player.name }}</p> <p class="player-score"> {{ player.region}}</p>
-          </div>
-        </div>
-        <v-bottom-sheet inset>
-          <template v-slot:activator="{ props }">
-            <div class="text-center">
-              <v-btn
-                  class="select-button"
-                  v-bind="props"
-                  text="Select"
-                  @click="addPlayerToTeam(player)"
-              ></v-btn>
+        <!-- 这里添加VueVirtualScroller -->
+      <RecycleScroller
+          class="scroller"
+          :items="filteredPlayers"
+          :item-size="120"
+          key-field="player_id"
+          v-slot="{ item }"
+      >
+        <div class="player-card">
+          <div class="player-info">
+            <div class="player-avatar" :style="{ backgroundColor: item.bgColor }">
+              {{ item.avatarInitials }}
             </div>
-          </template>
+            <div>
+              <h3 class="player-name">{{ item.handle }} </h3>
+              <p class="player-score">{{ item.name }}</p> <p class="player-score"> {{ item.region}}</p>
+            </div>
+          </div>
+          <v-bottom-sheet inset>
+            <template v-slot:activator="{ props }">
+              <div class="text-center">
+                <v-btn
+                    class="select-button"
+                    v-bind="props"
+                    text="Select"
+                    @click="addPlayerToTeam(item)"
+                ></v-btn>
+              </div>
+            </template>
 
-          <v-sheet>
-            <TeamDisplay :average="average" :team="selectedTeam"
-                         @deletePlayer="deletePlayerFromTeam"
-                         @show-champion="showModal"/>
-          </v-sheet>
-        </v-bottom-sheet>
-      </div>
+            <v-sheet>
+              <TeamDisplay :average="average" :team="selectedTeam"
+                           @deletePlayer="deletePlayerFromTeam"
+                           @show-champion="showModal"/>
+            </v-sheet>
+          </v-bottom-sheet>
+        </div>
+      </RecycleScroller>
     </div>
 
     <TrophyModal
@@ -105,11 +113,13 @@ import global from "..//global.js";
 import axios from 'axios';
 import TrophyModal from "@/views/components/TrophyModal.vue";
 import { marked } from 'marked';
+import {RecycleScroller} from "vue3-virtual-scroller";
 
 export default {
   components: {
     TrophyModal,
-    TeamDisplay
+    TeamDisplay,
+    RecycleScroller
   },
   computed: {
     filteredPlayers() {
@@ -332,7 +342,6 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  overflow-y: scroll;
 }
 .player-info {
   text-align: left;
