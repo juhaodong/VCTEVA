@@ -25,6 +25,15 @@
           <div class="message-avatar" v-if="message.type === 'user'" style="margin-left: 10px;">
             <v-icon size="35" color="black">mdi-account-circle</v-icon>
           </div>
+
+        </div>
+        <!-- Loading Indicator -->
+        <div v-if="isLoading" class="loading-indicator">
+          <div class="message-avatar" style="margin-right: 10px;">
+            <img src="./components/llama.png" alt="Bot Avatar" class="avatar" style="width: 35px; height: 35px;" />
+          </div>
+          <span>Loading</span><span class="loading-dots"></span>
+<!--          <div class="spinner"></div>-->
         </div>
       </div>
 
@@ -166,6 +175,7 @@ export default {
   },
   data() {
     return {
+      isLoading: false,
       isModalVisible: false,
       searchQuery: '',
       average: {},
@@ -188,7 +198,7 @@ export default {
       this.isModalVisible = false;
     },
     addPlayerToTeam(player) {
-      if (this.selectedTeam.length < 6 && !this.selectedTeam.includes(player)) {
+      if (this.selectedTeam.length < 5 && !this.selectedTeam.includes(player)) {
         this.selectedTeam.push(player);
       }
     },
@@ -197,15 +207,12 @@ export default {
       this.messages.push({ type: 'user', text: this.inputMessage });
       const message = this.inputMessage;
       this.inputMessage = '';
-
+      this.isLoading = true;
       try {
         const app = await client(global.GRADIO_LOCAL_LINK);
         console.log('client config ok');
         const result = await app.predict("/chat", [message]);
-        console.log('get chat result');
         const botResponse = result.data[0];
-        console.log(botResponse);
-
         // Convert botResponse to markdown format using 'marked'
         const markdownResponse = marked(botResponse);
 
@@ -213,6 +220,8 @@ export default {
       } catch (error) {
         this.messages.push({ type: 'bot', text: 'Sorry, I could not process your question at the moment.' });
         console.log(error);
+      } finally {
+        this.isLoading = false; // Reset loading state
       }
     },
     messageClass(type) {
@@ -382,10 +391,10 @@ export default {
 
 .player-name {
   font-family: 'Bebas Neue', Impact, sans-serif; /* 选择一个粗体且霸气的字体 */
-  font-size: 27px;
+  font-size: 35px;
   color: #070602;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
 }
 
 .player-score {
@@ -438,5 +447,55 @@ export default {
 
 .custom-select:focus {
   border-color: #007bff;
+}
+
+/* 加载回答时候的加载特效 */
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #a09dcf;
+  font-weight: bold;
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Animated loading dots */
+.loading-dots::after {
+  content: '';
+  display: inline-block;
+  animation: ellipsis 1.2s infinite steps(4, end);
+  vertical-align: bottom;
+  font-weight: bold;
+}
+
+@keyframes ellipsis {
+  0% {
+    content: '';
+  }
+  25% {
+    content: '.';
+  }
+  50% {
+    content: '..';
+  }
+  75% {
+    content: '...';
+  }
+  100% {
+    content: '';
+  }
 }
 </style>
