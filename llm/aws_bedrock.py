@@ -2,12 +2,15 @@ import boto3
 import json
 from typing import List, Tuple
 
-
-def message_builder(system_prompt: str, message: str, history: List[Tuple[str, str]]):
+def message_builder(system_prompt: str, message: str, history: List[Tuple[str, str]] = []):
     """
+    TODO: system_message设置给role：system
+
     为多模态模型构建消息格式，bedrock
     """
     messages = []
+
+    # 将历史消息添加到messages中
     for user_msg, assistant_msg in history:
         if user_msg:
             user_msg = [{"text": user_msg}]
@@ -16,6 +19,7 @@ def message_builder(system_prompt: str, message: str, history: List[Tuple[str, s
             assistant_msg = [{"text": assistant_msg}]
             messages.append({"role": "assistant", "content": assistant_msg})
 
+    # 将系统提示和用户消息添加到messages中
     message = [{"text": system_prompt +
                 "### Based on the requirements above, respond to the following qeury: " + message}]
     messages.append({"role": "user", "content": message})

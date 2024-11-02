@@ -1,8 +1,11 @@
 from huggingface_hub import InferenceClient
 from typing import List, Tuple
 
-def message_builder(system_prompt: str, message: str, history: List[Tuple[str, str]]):
+
+def message_builder(system_prompt: str, message: str, history: List[Tuple[str, str]] = []):
     """
+    TODO: system_message设置给role：system
+
     为普通文本模型构建消息格式，huggingface的llama
     """
     messages = []
@@ -18,12 +21,13 @@ def message_builder(system_prompt: str, message: str, history: List[Tuple[str, s
 
     return messages
 
+
 def llama_completion(messages: list[dict[str, str]]):
     llm_client = InferenceClient(
-        "meta-llama/Meta-Llama-3-8B-Instruct", 
+        "meta-llama/Meta-Llama-3-8B-Instruct",
         token="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"
     )
-    
+
     response = ""
     for mes in llm_client.chat_completion(
         messages,
@@ -34,4 +38,4 @@ def llama_completion(messages: list[dict[str, str]]):
     ):
         token = mes.choices[0].delta.content
         response += token
-    return response 
+    return response
