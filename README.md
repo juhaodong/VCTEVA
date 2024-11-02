@@ -183,6 +183,43 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 </details>
 
+4. Create Additional Table
+```mysql
+use vcteva;
+CREATE TABLE PlayerAverageStats AS
+SELECT 
+    p.player_id,
+    p.handle,
+    p.name,
+    p.team_id,
+    p.region,
+    p.league,
+    AVG(s.average_combat_score) AS average_combat_score,
+    AVG(s.kills) AS average_kills,
+    AVG(s.deaths) AS average_deaths,
+    AVG(s.assists) AS average_assists,
+    AVG(s.kpr) AS average_kpr,
+    AVG(s.dpr) AS average_dpr,
+    AVG(s.total_damage_taken) AS average_total_damage_taken,
+    AVG(s.total_damage_caused) AS average_total_damage_caused,
+    AVG(s.average_damage_per_round) AS average_damage_per_round,
+    AVG(s.average_damage_taken_per_round) AS average_damage_taken_per_round,
+    AVG(s.dddelta) AS average_dddelta,
+    AVG(s.headshot_hit_rate) AS average_headshot_hit_rate
+FROM 
+    Players p
+JOIN 
+    Tournaments t ON p.player_id = t.player_id
+JOIN 
+    Maps m ON t.tournament_id = m.tournament_id
+JOIN 
+    Agents a ON m.map_id = a.map_id
+JOIN 
+    Summary s ON a.agent_id = s.agent_id
+GROUP BY 
+    p.player_id, p.handle, p.name, p.team_id, p.region, p.league;
+```
+
 ### 4. AWS Bedrock and LLM Client Configuration
 
 1. Install the AWS CLI following the [official documentation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
