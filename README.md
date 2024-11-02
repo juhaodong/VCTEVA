@@ -185,7 +185,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 4. Create Additional Table
 ```mysql
-use vcteva;
+use VCTEVA;
 CREATE TABLE PlayerAverageStats AS
 SELECT 
     p.player_id,
