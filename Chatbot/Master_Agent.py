@@ -1,36 +1,8 @@
 from typing import List, Tuple, Dict, Any
 import pandas as pd
 import mysql.connector
-import pandas as pd
 from mysql.connector import Error
-from llm.llama3 import llama_completion as llm_completion
-
-
-def message_builder(system_prompt: str, message: str, history: List[Tuple[str, str]]):
-    # messages = []
-    # for user_msg, assistant_msg in history:
-    #     if user_msg:
-    #         user_msg = [{"text": user_msg}]
-    #         messages.append({"role": "user", "content": user_msg})
-    #     if assistant_msg:
-    #         assistant_msg = [{"text": assistant_msg}]
-    #         messages.append({"role": "assistant", "content": assistant_msg})
-
-    # message = [{"text": system_prompt +
-    #             "### Based on the requirements above, respond to the following qeury: " + message}]
-    # messages.append({"role": "user", "content": message})
-
-    messages = []
-    for user_msg, assistant_msg in history:
-        if user_msg:
-            messages.append({"role": "user", "content": user_msg})
-        if assistant_msg:
-            messages.append({"role": "assistant", "content": assistant_msg})
-
-    full_message = system_prompt + "### Based on the requirements above, respond to the following query: " + message
-    messages.append({"role": "user", "content": full_message})
-
-    return messages
+from llm.huggingface import llama_completion as llm_completion, message_builder
 
 
 def valorant_agent(message: str, history: List[Tuple[str, str]]):
@@ -344,6 +316,13 @@ def master_main(message: str, history: List[Tuple[str, str]]):
                 message += "Answer the questions based on the following information."
                 message += additional_info
                 print(additional_info)
-                return valorant_agent(message, history)
+
+                response = valorant_agent(message, history)
+
+                # "id3213123 is the best player for agent Jett  "
+                response = replaceIDwithName(response)
+                # 'james is the best player for agent Jett'
+
+                return response
             else:
                 return valorant_agent(message, history)

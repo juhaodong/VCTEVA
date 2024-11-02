@@ -27,7 +27,14 @@ class GradioInterface:
         app = gr.mount_gradio_app(app, self.demo, path="/")
 
         # 启动应用，监听特定端口
-        uvicorn.run(app, host="0.0.0.0", port=7862)
+        try:
+            uvicorn.run(app, host="0.0.0.0", port=7862)
+        except KeyboardInterrupt:
+            print("正在关闭服务器...")
+        finally:
+            # 确保资源被正确释放
+            if hasattr(app, 'shutdown'):
+                app.shutdown()
 
 
 def main():
