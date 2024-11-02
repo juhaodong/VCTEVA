@@ -3,22 +3,33 @@ import pandas as pd
 import mysql.connector
 import pandas as pd
 from mysql.connector import Error
-from llm.llama3 import llama_completion
-from llm.aws_bedrock import bedrock_completion
+from llm.llama3 import llama_completion as llm_completion
 
 
 def message_builder(system_prompt: str, message: str, history: List[Tuple[str, str]]):
+    # messages = []
+    # for user_msg, assistant_msg in history:
+    #     if user_msg:
+    #         user_msg = [{"text": user_msg}]
+    #         messages.append({"role": "user", "content": user_msg})
+    #     if assistant_msg:
+    #         assistant_msg = [{"text": assistant_msg}]
+    #         messages.append({"role": "assistant", "content": assistant_msg})
+
+    # message = [{"text": system_prompt +
+    #             "### Based on the requirements above, respond to the following qeury: " + message}]
+    # messages.append({"role": "user", "content": message})
+
     messages = []
     for user_msg, assistant_msg in history:
         if user_msg:
-            user_msg = [{"text": user_msg}]
             messages.append({"role": "user", "content": user_msg})
         if assistant_msg:
-            assistant_msg = [{"text": assistant_msg}]
             messages.append({"role": "assistant", "content": assistant_msg})
 
-    message = [{"text": system_prompt + "### Based on the requirements above, respond to the following qeury: "+ message}]
-    messages.append({"role": "user", "content": message})
+    full_message = system_prompt + "### Based on the requirements above, respond to the following query: " + message
+    messages.append({"role": "user", "content": full_message})
+
     return messages
 
 
@@ -35,16 +46,18 @@ def valorant_agent(message: str, history: List[Tuple[str, str]]):
     Your responses should help users gain deeper insights into all aspects of Valorant esports. Leverage your professional knowledge and enthusiasm to help users better appreciate and understand the allure of Valorant esports.
     '''
 
-    response = bedrock_completion(message_builder(system_message, message, history))
+    response = llm_completion(
+        message_builder(system_message, message, history))
     return response
+
 
 def ensure_sql_execute(system_message, message, response, retry):
     try:
         connection = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="vcteva_2024",
-        database="VCTEVA",
+            host="localhost",
+            user="root",
+            password="vcteva_2024",
+            database="VCTEVA",
         )
         cursor = connection.cursor()
         cursor.execute(response)
@@ -53,23 +66,25 @@ def ensure_sql_execute(system_message, message, response, retry):
         result_df = pd.DataFrame(result, columns=column_names)
         cursor.close()
         connection.close()
-        #可执行的SQL语句: 
+        # 可执行的SQL语句:
         print(response)
         return result_df
-    
+
     except Exception as e:
         retry += 1
         if retry <= 1:
             messages = []
             error_msg = f"An error occurred: {e}"
-            correction_instruction = [{"text": response + "The above SQL code executes with the following problem:  " + error_msg + "Please rewrite the SQL code according to the error message. You need to follow the requests of the users listed below when making changes. : #" + message + "#" + system_message}]
-            messages.append({"role": "user", "content": correction_instruction})
-            response = bedrock_completion(messages)
+            correction_instruction = [{"text": response + "The above SQL code executes with the following problem:  " + error_msg +
+                                       "Please rewrite the SQL code according to the error message. You need to follow the requests of the users listed below when making changes. : #" + message + "#" + system_message}]
+            messages.append(
+                {"role": "user", "content": correction_instruction})
+            response = llm_completion(messages)
             print(messages)
             print(response)
             return ensure_sql_execute(system_message, message, response, retry)
         else:
-            return False #重试超过1次就直接返回False
+            return False  # 重试超过1次就直接返回False
 
 
 def sql_agent(message: str, history: List[Tuple[str, str]]):
@@ -149,23 +164,24 @@ def sql_agent(message: str, history: List[Tuple[str, str]]):
         general_amount:	General amount of all damage caused.
 '''
 
-    ##得到response中的sql语句之后，直接执行，然后将得到的数据返回。(json_to_str)
-    response = bedrock_completion(message_builder(system_message, message, history))
+    # 得到response中的sql语句之后，直接执行，然后将得到的数据返回。(json_to_str)
+    response = llm_completion(
+        message_builder(system_message, message, history))
     if "create" in response.lower() or "insert" in response.lower():
         return False
     result_df = ensure_sql_execute(system_message, message, response, 0)
 
-    if isinstance(result_df, pd.DataFrame): # 不管得到的数据是空与否
+    if isinstance(result_df, pd.DataFrame):  # 不管得到的数据是空与否
         df_json_string = result_df.to_json(orient='records', force_ascii=False)
         print(df_json_string)
         return df_json_string
     else:
         print("Check Database Status!")
         return False
-    
+
 
 def team_builder_agent(message: str, history: List[Tuple[str, str]]):
-    ###为了确定联赛
+    # 为了确定联赛
     clf_league_msg = '''
     Complete the text classification task of categorizing the "user" query into one specific category of Leagues / Tournaments provided in the following list. 
     Your output can only be one of the items from the list: ["game-changers", "vct-challengers", "vct-international"]
@@ -173,7 +189,7 @@ def team_builder_agent(message: str, history: List[Tuple[str, str]]):
     messages = []
     msg = [{"text": message + clf_league_msg}]
     messages.append({"role": "user", "content": msg})
-    clf_league_response = bedrock_completion(messages)
+    clf_league_response = llm_completion(messages)
 
     league_sig = 0
     league_list = ["game-changers", "vct-challengers", "vct-international"]
@@ -185,26 +201,25 @@ def team_builder_agent(message: str, history: List[Tuple[str, str]]):
             break
         elif idx == len(league_list) - 1 and league_sig == 0:
             pass
-            
-    
-    ###为了确定Map
+
+    # 为了确定Map
     map_dict = {
-    "Abyss": "Infinity",
-    "Ascent": "Ascent",
-    "Bind": "Duality",
-    "Breeze": "Foxtrot",
-    "Fracture": "Canyon",
-    "Haven": "Triad",
-    "Icebox": "Port",
-    "Lotus": "Jam",
-    "Pearl": "Pitt",
-    "Split": "Bonsai",
-    "Sunset": "Juliett",
-    "District": "HURM_Alley",
-    "Drift": "HURM_Helix",
-    "Kasbah": "HURM_Bowl",
-    "Piazza": "HURM_Yard",
-    "Range": "Poveglia"
+        "Abyss": "Infinity",
+        "Ascent": "Ascent",
+        "Bind": "Duality",
+        "Breeze": "Foxtrot",
+        "Fracture": "Canyon",
+        "Haven": "Triad",
+        "Icebox": "Port",
+        "Lotus": "Jam",
+        "Pearl": "Pitt",
+        "Split": "Bonsai",
+        "Sunset": "Juliett",
+        "District": "HURM_Alley",
+        "Drift": "HURM_Helix",
+        "Kasbah": "HURM_Bowl",
+        "Piazza": "HURM_Yard",
+        "Range": "Poveglia"
     }
     clf_map_msg = '''
     Complete the text classification task of categorizing the "user" query into one specific category of Maps provided in the following list. 
@@ -213,10 +228,11 @@ def team_builder_agent(message: str, history: List[Tuple[str, str]]):
     messages = []
     msg = [{"text": "Query: " + message + clf_map_msg}]
     messages.append({"role": "user", "content": msg})
-    clf_map_response = bedrock_completion(messages)
+    clf_map_response = llm_completion(messages)
 
     map_sig = 0
-    map_list = ['Fracture', 'Haven', 'Infinity', 'Sunset', 'Triad', 'Range', 'Canyon', 'Port', 'HURM_Helix', 'Bonsai', 'HURM_Bowl', 'Kasbah', 'Ascent', 'Duality', 'District', 'HURM_Yard', 'Pitt', 'Pearl', 'Bind', 'Icebox', 'Drift', 'HURM_Alley', 'Poveglia', 'Breeze', 'Foxtrot', 'Juliett', 'Piazza', 'Abyss', 'Lotus', 'Split', 'Jam']
+    map_list = ['Fracture', 'Haven', 'Infinity', 'Sunset', 'Triad', 'Range', 'Canyon', 'Port', 'HURM_Helix', 'Bonsai', 'HURM_Bowl', 'Kasbah', 'Ascent', 'Duality', 'District',
+                'HURM_Yard', 'Pitt', 'Pearl', 'Bind', 'Icebox', 'Drift', 'HURM_Alley', 'Poveglia', 'Breeze', 'Foxtrot', 'Juliett', 'Piazza', 'Abyss', 'Lotus', 'Split', 'Jam']
     map_name = "Jam"
     explanation = ""
     for idx, map in enumerate(map_list):
@@ -234,7 +250,7 @@ def team_builder_agent(message: str, history: List[Tuple[str, str]]):
             1. Find the best team for the given map: "{map_name}" in 'best_team_combination_for_each_map' and find the best players in the given program: "{league_name}" for each agent in the team.
             2. In 'best_player_for_each_agent', there are at most 3 players for a gent, they are ordered descendingly by their win rate. If there are several same agents in the chosen team combination, choose the the corresponding players with the greatest win rate for the agent.
             '''
-    
+
     task = f'''
         Based on the above data, build a team using only players from "{league_name}". Below are the tasks for the "user" query "{message}" in details:
         1. Assign roles to players on the team and explain their contribution using the above data
@@ -284,9 +300,10 @@ def team_builder_agent(message: str, history: List[Tuple[str, str]]):
         return valorant_agent(message, history)
 
     messages = []
-    complete_msg = [{"text": "DATA: " + data_msg + "DATA Explanation: " + explanation + task}]
+    complete_msg = [{"text": "DATA: " + data_msg +
+                     "DATA Explanation: " + explanation + task}]
     messages.append({"role": "user", "content": complete_msg})
-    response = bedrock_completion(messages)
+    response = llm_completion(messages)
     return response
 
 
@@ -296,7 +313,8 @@ def normal_agent(message: str, history: List[Tuple[str, str]]):
     Your primary goal is to engage with users in a friendly, warm, and positive manner, making them feel welcome and valued.
     Responses don't include any emoji. 
     '''
-    response = bedrock_completion(message_builder(system_message, message, history))
+    response = llm_completion(
+        message_builder(system_message, message, history))
     return response
 
 
@@ -306,7 +324,8 @@ def classifier_agent(message: str, history: List[Tuple[str, str]]):
     Complete the text classification task for the "user" query, categorizing the request into one of the items provided in the following list. 
     Your output can only be one of the items from the list: ["Team Build", "Game Information", "Player Info", "Others"]
     '''
-    response = bedrock_completion(message_builder(system_message, message, history))
+    response = llm_completion(
+        message_builder(system_message, message, history))
     return response
 
 
@@ -317,15 +336,14 @@ def master_main(message: str, history: List[Tuple[str, str]]):
         return normal_agent(message, history)
     else:
         if "team build" in response.lower():
-                return team_builder_agent(message, history)
+            return team_builder_agent(message, history)
         else:
             additional_info = sql_agent(message, history)
             print("game / player info")
             if additional_info:
-                    message += "Answer the questions based on the following information."
-                    message += additional_info
-                    print(additional_info)
-                    return valorant_agent(message, history)
+                message += "Answer the questions based on the following information."
+                message += additional_info
+                print(additional_info)
+                return valorant_agent(message, history)
             else:
                 return valorant_agent(message, history)
-

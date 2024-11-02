@@ -1,12 +1,15 @@
 import gradio as gr
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
-from Chatbot.Master_Agent import master_main
-import uvicorn  # 导入 uvicorn
+import uvicorn
+
+from chatbot.master_agent import master_main
+
 
 class GradioInterface:
     def __init__(self):
         self.demo = gr.ChatInterface(master_main).queue()
+
     def launch(self):
         # 手动启动 FastAPI 应用并添加 CORS 支持
         app = FastAPI()

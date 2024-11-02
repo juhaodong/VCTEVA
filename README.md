@@ -74,11 +74,39 @@ sudo apt-get install mysql-server mysql-client libmysqlclient-dev
 ```bash
 mysql -u root -p
 ```
+<details>
+<summary>MySQL Login Command Details</summary>
+
+When using the command `mysql -u root -p`, you will be prompted to enter the MySQL root user's password. This command:
+- `-u root`: Specifies logging in as the root user
+- `-p`: Tells MySQL to prompt for a password
+</details>
+
+
 When using MySQL for the first time, there is no password set, so just press Enter.
 ```mysql
 ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'vcteva_2024';
 FLUSH PRIVILEGES;
 ```
+or 
+```mysql
+ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY 'vcteva_2024';
+FLUSH PRIVILEGES;
+```
+In MySQL 8.4 and higher versions, the mysql_native_password plugin is no longer enabled by default. The recommended solution is to change the user's authentication plugin to caching_sha2_password.
+<details>
+<summary>MySQL Password Setting Command Details</summary>
+This command does two things:
+
+1. `ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'vcteva_2024';`
+   - Changes the authentication method for the root user to mysql_native_password
+   - Sets the password for root user to 'vcteva_2024'
+   - '@localhost' means this user can only connect from the local machine
+
+2. `FLUSH PRIVILEGES;`
+   - Reloads the grant tables in the mysql database
+   - Makes the privilege changes take effect immediately without restarting MySQL
+</details>
 <details>
   <summary>OPTIONAL(or if you encounter login issues)</summary>
 
@@ -89,6 +117,20 @@ CREATE USER 'admin'@'localhost' IDENTIFIED BY 'PASSWORD';
 GRANT ALL PRIVILEGES ON *.* TO 'admin'@'localhost' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 ````
+This command sequence:
+
+1. `CREATE USER 'admin'@'localhost' IDENTIFIED BY 'PASSWORD';`
+   - Creates a new user named 'admin' who can only connect from localhost
+   - Sets their password to 'PASSWORD' (you should replace this with a secure password)
+
+2. `GRANT ALL PRIVILEGES ON *.* TO 'admin'@'localhost' WITH GRANT OPTION;`
+   - Gives the admin user full privileges on all databases (*.*)
+   - 'WITH GRANT OPTION' allows admin to grant privileges to other users
+   
+3. `FLUSH PRIVILEGES;`
+   - Reloads the privilege tables immediately
+   - Ensures the new privileges take effect without restarting MySQL
+
 
 - If you forget the password for the `root` or `admin` user，you can try the following steps to reset it:
   -  First, stop the MySQL service:
@@ -219,7 +261,7 @@ flowchart TD
 
 ### Key Components
 
-1. **Master Agent** ([Master_Agent.py](/Chatbot/Master_Agent.py)): Orchestrates the interaction between different specialized agents.
+1. **Master Agent** ([Master_Agent.py](chatbot/master_agent.py)): Orchestrates the interaction between different specialized agents.
 
 2. **Classifier Agent**: Determines the nature of the query (Valorant-related or general).
 
