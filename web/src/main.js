@@ -3,7 +3,7 @@ import App from './App.vue';
 import router from './router';
 import './assets/tailwind.css';
 
-import 'vuetify/styles';
+import './scss/variables.scss';
 import * as components from 'vuetify/components';
 import * as directives from 'vuetify/directives';
 import { createVuetify } from 'vuetify';
@@ -12,6 +12,9 @@ import VueVirtualScroller from 'vue3-virtual-scroller'
 
 import '@mdi/font/css/materialdesignicons.css';
 import 'vue3-virtual-scroller/dist/vue3-virtual-scroller.css'
+
+
+
 
 const vuetify = createVuetify({
     components,
@@ -23,6 +26,7 @@ const vuetify = createVuetify({
             mdi,
         },
     },
+
 });
 
 createApp(App)

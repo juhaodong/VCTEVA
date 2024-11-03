@@ -1,127 +1,208 @@
 <template>
-  <div class="app-container">
-    <!-- Chat Section -->
-    <div class="chat-section">
-      <div class="chat-header">
-        <img src="./components/llama.png" alt="ChatGPT" class="avatar" />
-        <span style="color: #1b1f23"> {{ llmService }}</span>
+
+  <v-container height="100%" fluid>
+
+    <div>
+      <div class="text-h1 font-weight-black mt-4">
+        🚢 Chooooose your superhero
       </div>
-      <div class="chat-history">
-        <div v-for="(message, index) in messages" :key="index" :class="['message', messageClass(message.type)]">
-          <!-- Bot Avatar -->
-          <div class="message-avatar" v-if="message.type === 'bot'" style="margin-right: 10px;">
-            <img src="./components/llama.png" alt="Bot Avatar" class="avatar" style="width: 35px; height: 35px;" />
-          </div>
-
-          <!-- Message Bubble -->
-          <div class="message-bubble">
-            <!-- If the message contains markdown, render it with v-html -->
-            <p v-if="message.isMarkdown" v-html="message.text" class="bot-message"></p>
-            <!-- Otherwise, render it as plain text -->
-            <p v-else class="user-message">{{ message.text }}</p>
-          </div>
-
-          <!-- User Avatar -->
-          <div class="message-avatar" v-if="message.type === 'user'" style="margin-left: 10px;">
-            <v-icon size="35" color="black">mdi-account-circle</v-icon>
-          </div>
-
-        </div>
-        <!-- Loading Indicator -->
-        <div v-if="isLoading" class="loading-indicator">
-          <div class="message-avatar" style="margin-right: 10px;">
-            <img src="./components/llama.png" alt="Bot Avatar" class="avatar" style="width: 35px; height: 35px;" />
-          </div>
-          <span>Loading</span><span class="loading-dots"></span>
-<!--          <div class="spinner"></div>-->
-        </div>
+      <div class="text-h5 font-weight-black mt-12">
+        to build an awesome team 💪
       </div>
-
-
-
-      <div class="chat-input">
-        <input
-            v-model="inputMessage"
-            @keydown.enter="sendMessage"
-            placeholder="Type your message..."
-            class="chat-input-box"
-        />
-        <button @click="sendMessage" class="send-button">Send</button>
+      <div class="mt-8">
+        <div></div>
       </div>
     </div>
-
-    <!-- Player List Section -->
-    <div class="player-list">
-      <div class="player-list-header">
-        <span>Players</span>
-      </div>
-      <!-- 搜索框：根据选手名字筛选 -->
-      <input
-          type="text"
-          v-model="searchQuery"
-          placeholder="Search Players..."
-          class="custom-input"
-      />
-      <select v-model="selectedRegion" class="custom-select">
-        <option value="">All Regions</option>
-        <option v-for="region in regions" :key="region" :value="region">
-          {{ region }}
-        </option>
-      </select>
-        <!-- 这里添加VueVirtualScroller -->
-      <RecycleScroller
-          class="scroller"
-          :items="filteredPlayers"
-          :item-size="120"
-          key-field="player_id"
-          v-slot="{ item }"
-      >
-        <div class="player-card">
-          <div class="player-info">
-            <div class="player-avatar" :style="{ backgroundColor: item.bgColor }">
-              {{ item.avatarInitials }}
+    <div style="display: grid;grid-template-columns: repeat(5,minmax(0,1fr));grid-gap: 12px">
+      <template v-for="i in 5" :key="i">
+        <v-card variant="flat" class="pa-4 g-glossy" width="100%" color="">
+          <v-responsive :aspect-ratio="9/12">
+            <div style="height: 100%;" class="d-flex flex-column justify-center text-center">
+              <v-spacer></v-spacer>
+              <div class="text-body-1">Waiting your summon...</div>
+            </div>
+          </v-responsive>
+        </v-card>
+      </template>
+    </div>
+    <div class="text-h4 mt-8 ">
+      Write your <span class="font-weight-black">MAGIC</span> spell here!
+    </div>
+    <v-text-field
+        color="black"
+        density="default"
+        style="border-bottom: 3px solid black" hide-details variant="plain" placeholder="I need an absolute dominator on the field"
+        append-inner-icon="mdi-arrow-right"
+    ></v-text-field>
+    <!-- Chat Section -->
+    <div style="position: fixed;bottom: 0;left: 0;right: 0;" class="rounded-t  elevation-4">
+      <template v-if="!toolbarExpand">
+        <div style="display: grid;grid-template-columns: repeat(2,minmax(0,1fr))">
+          <div @click="showToolbar(0)" class="pa-6 bg-green-lighten-2 text-h4 font-weight-black d-flex align-center">
+            🤖 AI Assistant
+            <v-spacer></v-spacer>
+            <v-icon>mdi-arrow-right</v-icon>
+          </div>
+          <div @click="showToolbar(1)" class="pa-6 bg-grey-lighten-5 text-h4 font-weight-black d-flex align-center">
+            ⛹️ Player Base
+            <v-spacer></v-spacer>
+            <v-icon>mdi-arrow-right</v-icon>
+          </div>
+        </div>
+      </template>
+      <template v-else>
+        <div
+            :class="toolbarTab===0?'bg-green-lighten-5':'bg-grey-lighten-5'"
+            class="d-flex flex-column"
+            style="height: 60vh"
+        >
+          <template v-if="toolbarTab===0">
+            <div class="pa-4 bg-green-lighten-2 text-h4 font-weight-black d-flex align-center">
+              🤖 AI Assistant
+              <v-spacer></v-spacer>
+              <v-btn @click.stop="toolbarExpand=false" icon="mdi-close" variant="text"></v-btn>
             </div>
             <div>
-              <h3 class="player-name">{{ item.handle }} </h3>
-              <p class="player-score">{{ item.name }}</p> <p class="player-score"> {{ item.region}}</p>
-            </div>
-          </div>
-          <v-bottom-sheet inset>
-            <template v-slot:activator="{ props }">
-              <div class="text-center">
-                <v-btn
-                    class="select-button"
-                    v-bind="props"
-                    text="Select"
-                    @click="addPlayerToTeam(item)"
-                ></v-btn>
-              </div>
-            </template>
+              <div class="chat-history">
+                <div v-for="(message, index) in messages" :key="index" :class="['message', messageClass(message.type)]">
+                  <!-- Bot Avatar -->
+                  <div class="message-avatar" v-if="message.type === 'bot'" style="margin-right: 10px;">
+                    <img
+                        src="./components/llama.png" alt="Bot Avatar" class="avatar" style="width: 35px; height: 35px;"
+                    />
+                  </div>
 
-            <v-sheet>
-              <TeamDisplay :average="average" :team="selectedTeam"
-                           @deletePlayer="deletePlayerFromTeam"
-                           @show-champion="showModal"/>
-            </v-sheet>
-          </v-bottom-sheet>
+                  <!-- Message Bubble -->
+                  <div class="message-bubble">
+                    <!-- If the message contains markdown, render it with v-html -->
+                    <p v-if="message.isMarkdown" v-html="message.text" class="bot-message"></p>
+                    <!-- Otherwise, render it as plain text -->
+                    <p v-else class="user-message">{{ message.text }}</p>
+                  </div>
+
+                  <!-- User Avatar -->
+                  <div class="message-avatar" v-if="message.type === 'user'" style="margin-left: 10px;">
+                    <v-icon size="35" color="black">mdi-account-circle</v-icon>
+                  </div>
+
+                </div>
+                <!-- Loading Indicator -->
+                <div v-if="isLoading" class="loading-indicator">
+                  <div class="message-avatar" style="margin-right: 10px;">
+                    <img
+                        src="./components/llama.png" alt="Bot Avatar" class="avatar" style="width: 35px; height: 35px;"
+                    />
+                  </div>
+                  <span>Loading</span><span class="loading-dots"></span>
+                  <!--          <div class="spinner"></div>-->
+                </div>
+              </div>
+            </div>
+            <v-spacer></v-spacer>
+            <div class="d-flex bg-green-lighten-2 pa-4">
+              <v-text-field
+                  hide-details
+                  variant="outlined" rounded="xl" bg-color="white" @keydown.enter="sendMessage"
+                  placeholder="Type your message..."
+                  v-model="inputMessage"
+                  class="mr-2"
+                  append-inner-icon="mdi-send"
+                  density="comfortable"
+              ></v-text-field>
+            </div>
+
+          </template>
+          <template v-else>
+            <div @click="showToolbar(1)" class="pa-4 bg-grey-lighten-5 text-h4 font-weight-black d-flex align-center">
+              ⛹️ Player Base
+              <v-spacer></v-spacer>
+              <v-btn @click.stop="toolbarExpand=false" icon="mdi-close" variant="text"></v-btn>
+            </div>
+            <v-card width="30%" class="px-6 py-4" :rounded="'xl'" elevation="4">
+              <div class="player-list-header">
+                <span>Players</span>
+              </div>
+              <!-- 搜索框：根据选手名字筛选 -->
+              <v-text-field
+                  v-model="searchQuery"
+                  variant="outlined" prepend-inner-icon="mdi-magnify" density="comfortable"
+                  placeholder="Search Players..."
+              ></v-text-field>
+
+              <select v-model="selectedRegion" class="custom-select">
+                <option value="">All Regions</option>
+                <option v-for="region in regions" :key="region" :value="region">
+                  {{ region }}
+                </option>
+              </select>
+              <!-- 这里添加VueVirtualScroller -->
+              <RecycleScroller
+                  class="scroller"
+                  :items="filteredPlayers"
+                  :item-size="120"
+                  key-field="player_id"
+                  v-slot="{ item }"
+              >
+                <div class="player-card">
+                  <div class="player-info">
+                    <div class="player-avatar" :style="{ backgroundColor: item.bgColor }">
+                      {{ item.avatarInitials }}
+                    </div>
+                    <div>
+                      <h3 class="player-name">{{ item.handle }} </h3>
+                      <p class="player-score">{{ item.name }}</p>
+                      <p class="player-score"> {{ item.region }}</p>
+                    </div>
+                  </div>
+                  <v-bottom-sheet inset>
+                    <template v-slot:activator="{ props }">
+                      <div class="text-center">
+                        <v-btn
+                            class="select-button"
+                            v-bind="props"
+                            text="Select"
+                            @click="addPlayerToTeam(item)"
+                        ></v-btn>
+                      </div>
+                    </template>
+
+                    <v-sheet>
+                      <team-display
+                          :average="average"
+                          :team="selectedTeam"
+                          @deletePlayer="deletePlayerFromTeam"
+                          @show-champion="showModal"
+                      />
+                    </v-sheet>
+                  </v-bottom-sheet>
+                </div>
+              </RecycleScroller>
+            </v-card>
+          </template>
         </div>
-      </RecycleScroller>
+
+      </template>
+
     </div>
 
+
+    <!-- Player List Section -->
+
+
     <TrophyModal
-        v-if="isModalVisible"
-        :isVisible="isModalVisible"
+        v-if="championModal"
+        :isVisible="championModal"
         @close="closeModal"
     />
-  </div>
+  </v-container>
 </template>
 <script>
 import TeamDisplay from "@/views/components/TeamDisplay.vue";
-import { client } from "@gradio/client";
+import {client} from "@gradio/client";
 import global from "..//global.js";
 import axios from 'axios';
 import TrophyModal from "@/views/components/TrophyModal.vue";
-import { marked } from 'marked';
+import {marked} from 'marked';
 import {RecycleScroller} from "vue3-virtual-scroller";
 
 export default {
@@ -144,7 +225,7 @@ export default {
       });
     },
   },
-  async created() {
+  async mounted() {
     try {
       const response = await axios.get(global.DATABASE_LINK + '/players');
       this.availablePlayers = response.data.map(player => {
@@ -165,18 +246,22 @@ export default {
       });
 
       console.log(this.availablePlayers); // 检查输出的内容是否正确
+      const regionResponse = await axios.get(global.DATABASE_LINK + '/regions');
+      const averageResponse = await axios.get(global.DATABASE_LINK + '/average');
+      this.regions = regionResponse.data;
+      this.average = averageResponse.data[0];
     } catch (error) {
       console.error('Error fetching data:', error);
     }
-    const regionResponse = await axios.get(global.DATABASE_LINK + '/regions');
-    const averageResponse = await axios.get(global.DATABASE_LINK + '/average');
-    this.regions = regionResponse.data;
-    this.average = averageResponse.data[0];
+
+
   },
   data() {
     return {
+      toolbarExpand: false,
+      toolbarTab: 0,
       isLoading: false,
-      isModalVisible: false,
+      championModal: false,
       searchQuery: '',
       average: {},
       selectedRegion: '',
@@ -185,17 +270,21 @@ export default {
       selectedTeam: [],
       inputMessage: '',
       messages: [
-        { type: 'bot', text: 'Yeah, it would help in forming a team!' },
+        {type: 'bot', text: 'Yeah, it would help in forming a team!'},
       ],
       availablePlayers: [],
     };
   },
   methods: {
+    showToolbar(tab) {
+      this.toolbarExpand = true
+      this.toolbarTab = tab
+    },
     showModal() {
-      this.isModalVisible = true;
+      this.championModal = true;
     },
     closeModal() {
-      this.isModalVisible = false;
+      this.championModal = false;
     },
     addPlayerToTeam(player) {
       if (this.selectedTeam.length < 5 && !this.selectedTeam.includes(player)) {
@@ -204,7 +293,7 @@ export default {
     },
     async sendMessage() {
       if (!this.inputMessage.trim()) return;
-      this.messages.push({ type: 'user', text: this.inputMessage });
+      this.messages.push({type: 'user', text: this.inputMessage});
       const message = this.inputMessage;
       this.inputMessage = '';
       this.isLoading = true;
@@ -216,9 +305,9 @@ export default {
         // Convert botResponse to markdown format using 'marked'
         const markdownResponse = marked(botResponse);
 
-        this.messages.push({ type: 'bot', text: markdownResponse, isMarkdown: true });
+        this.messages.push({type: 'bot', text: markdownResponse, isMarkdown: true});
       } catch (error) {
-        this.messages.push({ type: 'bot', text: 'Sorry, I could not process your question at the moment.' });
+        this.messages.push({type: 'bot', text: 'Sorry, I could not process your question at the moment.'});
         console.log(error);
       } finally {
         this.isLoading = false; // Reset loading state
@@ -244,16 +333,13 @@ export default {
   justify-content: space-between;
   padding: 30px; /* 增加整体容器的内边距 */
   background-color: #f5f7fa;
-  height: 100vh;
+  height: 100%;
   width: 100vw;
 }
 
 /* 聊天区域样式 */
 .chat-section {
-  width: 65%; /* 调整聊天区的宽度 */
   background-color: white;
-  border-radius: 20px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -271,7 +357,6 @@ export default {
 .chat-history {
   flex-grow: 1;
   overflow-y: auto;
-  background-color: #eef2f5;
   padding: 15px;
   border-radius: 10px;
   margin-bottom: 10px; /* 增加底部间距 */
@@ -284,7 +369,7 @@ export default {
 }
 
 .user-message .message-bubble {
-  background-color: #0065f4;
+  background-color: white;
   border-radius: 15px 15px 0 15px;
   align-self: flex-end;
 }
@@ -296,7 +381,7 @@ export default {
   align-self: flex-start;
 }
 
-.message-avatar{
+.message-avatar {
   padding-left: 10px;
   padding-right: 10px;
 }
@@ -341,17 +426,7 @@ export default {
   background-color: #4c47d8;
 }
 
-/* 玩家列表样式 */
-.player-list {
-  width: 30%; /* 调整玩家列表的宽度 */
-  background-color: white;
-  border-radius: 20px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
+
 .player-info {
   text-align: left;
   display: flex;
@@ -377,17 +452,17 @@ export default {
 }
 
 
-  .player-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    font-size: 18px;
-    font-weight: bold;
-  }
+.player-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+}
 
 .player-name {
   font-family: 'Bebas Neue', Impact, sans-serif; /* 选择一个粗体且霸气的字体 */
@@ -433,6 +508,7 @@ export default {
 .custom-input:focus {
   border-color: #007bff;
 }
+
 /* 右边选手赛区选择框 */
 .custom-select {
   width: 100%;
@@ -468,8 +544,12 @@ export default {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Animated loading dots */
@@ -498,4 +578,10 @@ export default {
     content: '';
   }
 }
+
+.g-glossy {
+  background-color: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+}
+
 </style>
